@@ -4,58 +4,48 @@
 #include <stdio.h>
 #include "list.h"
 
-void *NodeNew(int elemSize)
-{
-    node *newNode = malloc(sizeof(node));
-    assert(newNode != NULL);
-    newNode->content = malloc(elemSize);
-    assert(newNode->content != NULL);
-    newNode->prev = NULL;
-    newNode->next = NULL;
-    return newNode;
+void *create_node(int elem_size) {
+    Node *new_node = malloc(sizeof(Node));
+    assert(new_node != NULL);
+    new_node->content = malloc(elem_size);
+    assert(new_node->content != NULL);
+    new_node->prev = NULL;
+    new_node->next = NULL;
+    return new_node;
 }
 
-node *NodeNext(node *n)
-{
-    if (n)
-        return (n->next);
+Node *next_node(const Node *n) {
+    if (n) return (n->next);
     return NULL;
 }
 
-node *NodePrev(node *n)
-{
-    if (n)
-        return (n->prev);
+Node *prev_node(const Node *n) {
+    if (n) return (n->prev);
     return NULL;
 }
 
-void *NodeContent(node *n)
-{   
-    if (n)
-        return (n->content);
+void *get_node_content(const Node *n) {
+    if (n) return (n->content);
     return NULL;
 }
 
-void ListNew(list *l, int elemSize, ListFreeFunction freeFn)
-{
-    assert(elemSize > 0);
+void list_new(List *l, int elem_size, ListFreeFunction freeFn) {
+    assert(elem_size > 0);
     assert(l != NULL);
+    l->elem_size = elem_size;
+    l->logical = 0;
     l->root = NULL;
     l->end = NULL;
-    l->elemSize = elemSize;
-    l->logical = 0;
     l->freeFn = freeFn;
 }
 
-void ListDispose(list *l)
-{
+void list_dispose(List *l) {
     assert(l != NULL);
-    node *curr = l->root;
-    node *next = NULL;
-    while (curr)
-    {
-        l->freeFn(curr->content);
-        next = curr->next;
+    Node *curr = l->root;
+    Node *next = NULL;
+    while (curr) {
+        l->freeFn(get_node_content(curr));
+        next = next_node(curr);
         free(curr);
         curr = next;
     }
@@ -63,193 +53,166 @@ void ListDispose(list *l)
     l->logical = 0;
 }
 
-int ListLength(const list *l)
-{
+// element access
+
+void *list_front(const List *l) {
+    assert(l != NULL);
+    return get_node_content(l->root);
+}
+
+void *list_back(const List *l) {
+    assert(l != NULL);
+    return get_node_content(l->end);
+}
+
+// iterators 
+
+Node *list_begin(const List *l) {
+    if (l) return l->root;
+    return NULL;
+}
+
+Node *list_end(List *l) {
+    if (l) return l->end;
+    return NULL;    
+}
+
+// capacity
+
+int list_len(const List *l) {
     assert(l != NULL);
     return l->logical;
 }
 
-int ListEmpty(list *l)
-{
+int list_empty(const List *l) {
     assert(l != NULL);
     return (l->logical ? 0 : 1);
 }
 
-node *ListBegin(list *l)
-{
-    if (l)
-        return l->root;
-    return NULL;
-}
+// modifiers
 
-node *ListEnd(list *l)
-{
-    if (l)
-        return l->end;
-    return NULL;    
-}
-
-void *ListFront(list *l)
-{
-    assert(l != NULL);
-    return l->root->content;
-}
-
-void *ListBack(list *l)
-{
-    assert(l != NULL);
-    return l->end->content;
-}
-
-void ListPushFront(list *l, const void *elemAddr)
-{
+void list_push_front(List *l, const void *elemAddr) {
     assert(l != NULL && elemAddr != NULL);
-    node *newNode = NodeNew(l->elemSize);
-    memcpy(newNode->content, elemAddr, l->elemSize);
+    Node *new_node = create_node(l->elem_size);
+    memcpy(get_node_content(new_node), elemAddr, l->elem_size);
     l->logical++;
-    if (l->root == NULL && l->end == NULL)
-    {
-        l->root = l->end = newNode;
+    if (l->root == NULL && l->end == NULL) {
+        l->root = l->end = new_node;
         return;
     }
-    newNode->next = l->root;
-    l->root->prev = newNode;
-    l->root = newNode;
+    new_node->next = l->root;
+    l->root->prev = new_node;
+    l->root = new_node;
 }
 
-void ListPopFront(list *l)
-{
+void list_pop_front(List *l) {
     assert(l != NULL);
-    if (ListEmpty(l))
-        return;
-    node *tmp = l->root;
-    if (l->root->next == NULL)
-    {
+    if (list_empty(l)) return;
+    Node *tmp = l->root;
+    if (next_node(l->root) == NULL) {
         l->root = l->end = NULL;
-    }
-    else
-    {
-        l->root = l->root->next;
+    } else {
+        l->root = next_node(l->root);
         l->root->prev = NULL;
     }
-    l->logical--;
-    void (*freeFn)(void*) = l->freeFn;
-    l->freeFn(tmp->content);
+    l->freeFn(get_node_content(tmp));
     free(tmp);
+    l->logical--;
 }
 
-void ListPushBack(list *l, const void *elemAddr)
-{
+void list_push_back(List *l, const void *elemAddr) {
     assert(l != NULL && elemAddr != NULL);
-    node *newNode = NodeNew(l->elemSize);
-    memcpy(newNode->content, elemAddr, l->elemSize);
-    if (l->root == NULL && l->end == NULL)
-    {
-        l->root = l->end = newNode;
+    Node *new_node = create_node(l->elem_size);
+    memcpy(new_node->content, elemAddr, l->elem_size);
+    if (l->root == NULL && l->end == NULL) {
+        l->root = l->end = new_node;
         return;
     }
-    l->end->next = newNode;
-    newNode->prev = l->end;
-    l->end = newNode;
+    l->end->next = new_node;
+    new_node->prev = l->end;
+    l->end = new_node;
 }
 
-void ListPopBack(list *l)
-{
+void list_pop_back(List *l) {
     assert(l != NULL);
-    if (ListEmpty(l))
-        return;
-    node *tmp = l->end;
-    if (l->end->prev == NULL)
+    if (list_empty(l)) return;
+    Node *tmp = l->end;
+    if (prev_node(l->end) == NULL) {
         l->root = l->end = NULL;
-    else
-    {
-        l->end = l->end->prev;
+    } else {
+        l->end = prev_node(l->end);
         l->end->next = NULL;
     }
-    l->logical--;
     l->freeFn(tmp->content);
     free(tmp);
+    l->logical--;
 }
 
-void *ListInsert(list *l, node *position, void *elemAddr)
-{
-    node *newNode = NodeNew(l->elemSize);
-    memcpy(newNode->content, elemAddr, l->elemSize);
-    if (l->root == NULL && l->end == NULL)
-    {
-        l->root = l->end = newNode;
+void *list_insert(List *l, Node *position, const void *elemAddr) {
+    Node *new_node = create_node(l->elem_size);
+    memcpy(new_node->content, elemAddr, l->elem_size);
+    if (l->root == NULL && l->end == NULL) {
+        l->root = l->end = new_node;
+    } else if (l->root && l->root == position) {
+        l->root->prev = new_node;
+        new_node->next = l->root;
+        l->root = new_node;
+    } else if (l->end && position == NULL) {
+        l->end->next = new_node;
+        new_node->prev = l->end;
+        l->end = new_node;
+    } else {
+        new_node->prev = prev_node(position);
+        position->prev->next = new_node;
+        new_node->next = position;
+        position->prev = new_node;
     }
-    else if (l->root && l->root == position)
-    {
-        l->root->prev = newNode;
-        newNode->next = l->root;
-        l->root = newNode;
-    }
-    else if (l->end && position == NULL)
-    {
-        l->end->next = newNode;
-        newNode->prev = l->end;
-        l->end = newNode;
-    }
-    else
-    {
-        newNode->prev = position->prev;
-        position->prev->next = newNode;
-        newNode->next = position;
-        position->prev = newNode;
-    }
-    return newNode;
+    l->logical++;
+    return new_node;
 }
 
-void *ListErase(list *l, node *position)
-{
+void *list_erase(List *l, Node *position) {
     assert(position != NULL);
     assert(l != NULL);
-    node *curr = NULL;
+    Node *curr = NULL;
     if (l->root == l->end)
         l->root = l->end = NULL;
     else if (l->root == position) {
-        l->root = position->next;
+        l->root = next_node(position);
         l->root->prev = NULL;
         curr = l->root;
-    }
-    else if (position == l->end)
-    {
-        l->end = position->prev;
+    } else if (position == l->end) {
+        l->end = prev_node(position);
         l->end->next = NULL;
         curr = l->end;
+    } else {
+        position->prev->next = next_node(position);
+        position->next->prev = prev_node(position);
+        curr = next_node(position);
     }
-    else
-    {
-        position->prev->next = position->next;
-        position->next->prev = position->prev;
-        curr = position->next;
-    }
-    l->freeFn(position->content);
+    l->freeFn(get_node_content(position));
     free(position);
+    l->logical--;
     return curr;
 }
 
-void ListRemoveIf(list *l, ListCmpFunction CmpFn, void *auxData)
-{
-    node *curr = l->root;
-    while (curr)
-    {
-        if (CmpFn(curr->content, auxData))
-        {
-            curr = ListErase(l, curr);
+void list_remove_if(List *l, ListCmpFunction CmpFn, void *aux_data) {
+    Node *curr = l->root;
+    while (curr) {
+        if (CmpFn(get_node_content(curr), aux_data)) {
+            curr = list_erase(l, curr);
+        } else {
+            curr = next_node(curr);
         }
-        else
-            curr = curr->next;
     }
 }
 
-void ListMap(list *l, void (*mapFn)(void *elemAddr, void *), void *auxData)
-{
-    node *curr = l->root;
-    while (curr)
-    {
-        mapFn(curr->content, auxData);
-        curr = curr->next;
+void list_map(const List *l, void (*mapFn)(void *, void *),
+            void *aux_data) {
+
+    Node *curr = l->root;
+    while (curr) {
+        mapFn(get_node_content(curr), aux_data);
+        curr = next_node(curr);
     }
 }

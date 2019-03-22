@@ -4,43 +4,43 @@
 typedef void (*ListFreeFunction)(void *elemAddr);
 typedef int (*ListCmpFunction)(void *elemAddr1, void *elemAddr2);
 
-typedef struct node node;
+typedef struct Node Node;
 
-typedef struct node
-{
+typedef struct Node {
     void *content;
-    node *prev;
-    node *next;
-} node;
+    Node *prev;
+    Node *next;
+} Node;
 
-typedef struct
-{
-    node *root;
-    node *end;
-    int elemSize;
+typedef struct {
+    int elem_size;
     int logical;
+    Node *root;
+    Node *end;
     ListFreeFunction freeFn;
-} list;
+} List;
 
-void *NodeNew(int elemSize);
-node *NodeNext(node *n);
-node *NodePrev(node *n);
-void *NodeContent(node *n);
-void ListNew(list *l, int elemSize, ListFreeFunction freeFn);
-void ListDispose(list *l);
-int ListLength(const list *l);
-int ListEmpty(list *l);
-node *ListBegin(list *l);
-node *ListEnd(list *l);
-void *ListFront(list *l);
-void *ListBack(list *l);
-void ListPushFront(list *l, const void *elemAddr);
-void ListPopFront(list *l);
-void ListPushBack(list *l, const void *elemAddr);
-void ListPopBack(list *l);
-void *ListInsert(list *l, node *position, void *elemAddr);
-void *ListErase(list *l, node *position);
-void ListRemoveIf(list *l, ListCmpFunction CmpFn, void *auxData);
-void ListMap(list *l, void (*mapFn)(void *elemAddr, void *), void *auxData);
+void *create_node(int elemSize);
+Node *next_node(const Node *n);
+Node *prev_node(const Node *n);
+void *get_node_content(const Node *n);
+
+/**list functions**/
+void list_new(List *l, int elemSize, ListFreeFunction freeFn);
+void list_dispose(List *l);
+int list_len(const List *l);
+int list_empty(const List *l);
+Node *list_begin(const List *l);
+Node *list_end(List *l);
+void *list_front(const List *l);
+void *list_back(const List *l);
+void list_push_front(List *l, const void *elemAddr);
+void list_pop_front(List *l);
+void list_push_back(List *l, const void *elemAddr);
+void list_pop_back(List *l);
+void *list_insert(List *l, Node *position, const void *elemAddr);
+void *list_erase(List *l, Node *position);
+void list_remove_if(List *l, ListCmpFunction CmpFn, void *aux_data);
+void list_map(const List *l, void (*mapFn)(void *, void *), void *aux_data);
 
 #endif
