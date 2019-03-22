@@ -1,9 +1,0 @@
-{
-    "files.associations": {
-        "stdlib.h": "c",
-        "unit_testing.h": "c",
-        "stddef.h": "c",
-        "stdarg.h": "c",
-        "list.h": "c"
-    }
-}
